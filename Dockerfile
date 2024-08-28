@@ -47,6 +47,6 @@ RUN bazel build -c $LEVEL envoy
 FROM envoyproxy/envoy:dev AS runtime
 COPY --from=binary /build/bazel-bin/envoy /usr/local/bin/envoy
 
-CMD ["/bin/envoy", "-c", "/etc/envoy/envoy.yaml"]
+CMD ["/usr/local/bin/envoy", "-c", "/etc/envoy/envoy.yaml"]
 
 FROM runtime
