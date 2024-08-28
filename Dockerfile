@@ -35,12 +35,9 @@ ENV CC=/opt/llvm/bin/clang
 ENV PATH=/opt/llvm/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 USER envoybuild
-# cache a layer to build envoy
-FROM build AS warm
-ARG LEVEL=dbg
-RUN bazel build -c $LEVEL @envoy//source/exe:envoy_main_entry_lib
+
 # now build the extensions to link in
-FROM warm as binary
+FROM build as binary
 ARG LEVEL=dbg
 RUN bazel build -c $LEVEL envoy
 
