@@ -154,6 +154,9 @@ OWNED_BY_MODULE;
 // envoy_dynamic_module_type_InModuleHeadersSize is the size of the vector of buffers.
 typedef size_t envoy_dynamic_module_type_InModuleHeadersSize;
 
+// envoy_dynamic_module_type_LogResult is the result of a log operation
+typedef size_t envoy_dynamic_module_type_LogResult;
+
 // -----------------------------------------------------------------------------
 // ----------------------------------- Enums -----------------------------------
 // -----------------------------------------------------------------------------
@@ -227,6 +230,34 @@ static const envoy_dynamic_module_type_EventHttpResponseBodyStatus
 static const envoy_dynamic_module_type_EventHttpResponseBodyStatus
     envoy_dynamic_module_type_EventHttpResponseBodyStatusStopIterationAndBuffer =
         ENVOY_DYNAMIC_MODULE_BODY_STATUS_STOP_ITERATION_AND_BUFFER;
+
+#define ENVOY_DYNAMIC_MODULE_LOG_SUCCESS 0
+#define ENVOY_DYNAMIC_MODULE_LOG_INVALID_MEM 1
+#define ENVOY_DYNAMIC_MODULE_LOG_UNKNOWN_LVL 2
+
+static const envoy_dynamic_module_type_LogResult
+    envoy_dynamic_module_type_LogResultSuccess =
+        ENVOY_DYNAMIC_MODULE_LOG_SUCCESS;
+static const envoy_dynamic_module_type_LogResult
+    envoy_dynamic_module_type_LogResultInvalidMem =
+        ENVOY_DYNAMIC_MODULE_LOG_INVALID_MEM;
+static const envoy_dynamic_module_type_LogResult
+    envoy_dynamic_module_type_LogResultUnknownLevel =
+        ENVOY_DYNAMIC_MODULE_LOG_UNKNOWN_LVL;
+
+// envoy_dyno_module_type_LogLevel map to spdlog levels, but not explicitly.
+// See https://internal.dunescience.org/doxygen/common_8h.html#a57ad66f77dc01b41a51f7e884dd460dd
+//
+// the ugly _LVL is because DEBUG is already defined
+enum envoy_dynamic_module_type_LogLevel {
+    TRACE_LVL,
+    DEBUG_LVL,
+    INFO_LVL,
+    WARN_LVL,
+    ERROR_LVL,
+    CRITICAL_LVL
+};
+
 
 // -----------------------------------------------------------------------------
 // ------------------------------- Event Hooks ---------------------------------
@@ -538,6 +569,20 @@ void envoy_dynamic_module_http_send_response(
     envoy_dynamic_module_type_InModuleHeadersSize headers_vector_size,
     envoy_dynamic_module_type_InModuleBufferPtr body,
     envoy_dynamic_module_type_InModuleBufferLength body_length);
+
+
+// envoy_dynamic_module_log permits logging to Envoy's built-in fine-grained log stack. it requires
+// that you provide filename, file line, and function name.
+envoy_dynamic_module_type_LogResult envoy_dynamic_module_log(
+    envoy_dynamic_module_type_InModuleBufferPtr file_name_str,
+    envoy_dynamic_module_type_InModuleBufferLength file_name_str_length,
+    int file_line,
+    envoy_dynamic_module_type_InModuleBufferPtr func_name_str,
+    envoy_dynamic_module_type_InModuleBufferLength func_name_str_length,
+    enum envoy_dynamic_module_type_LogLevel level,
+    envoy_dynamic_module_type_InModuleBufferPtr log_line_str,
+    envoy_dynamic_module_type_InModuleBufferLength log_line_str_length);
+
 
 #ifdef __cplusplus
 }

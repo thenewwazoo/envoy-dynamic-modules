@@ -5,6 +5,7 @@ fn main() {
     let bindings = bindgen::Builder::default()
         .header("abi.h")
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
+        .newtype_enum("envoy_dynamic_module_type_LogLevel")
         .generate()
         .expect("Unable to generate bindings");
 

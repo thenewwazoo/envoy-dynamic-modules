@@ -3,6 +3,7 @@
 #![allow(non_snake_case)]
 #![allow(dead_code)]
 
+use log::{Level, Log, Metadata, Record, SetLoggerError};
 use std::ptr;
 
 mod abi {
@@ -1040,4 +1041,55 @@ impl From<ResponseBodyStatus> for abi::envoy_dynamic_module_type_EventHttpRespon
             }
         }
     }
+}
+
+impl From<Level> for abi::envoy_dynamic_module_type_LogLevel {
+    fn from(lvl: Level) -> Self {
+        match lvl {
+            Level::Trace => abi::envoy_dynamic_module_type_LogLevel::TRACE_LVL,
+            Level::Debug => abi::envoy_dynamic_module_type_LogLevel::DEBUG_LVL,
+            Level::Info => abi::envoy_dynamic_module_type_LogLevel::INFO_LVL,
+            Level::Warn => abi::envoy_dynamic_module_type_LogLevel::WARN_LVL,
+            Level::Error => abi::envoy_dynamic_module_type_LogLevel::ERROR_LVL,
+        }
+    }
+}
+
+pub struct EnvoyLogger;
+
+impl EnvoyLogger {
+    pub fn init(self) -> Result<(), SetLoggerError> {
+        // filtering is handled by Envoy, so we pass everything
+        log::set_max_level(log::LevelFilter::Error);
+        log::set_boxed_logger(Box::new(self))
+    }
+}
+
+impl Log for EnvoyLogger {
+    /// Envoy logging is managed outside of the filter, so we always return true
+    fn enabled(&self, _: &Metadata) -> bool {
+        true
+    }
+
+    fn log(&self, record: &Record) {
+        let file = record.file().unwrap_or("unknown file");
+        let line = record.line().unwrap_or(0);
+        let mpath = record.module_path().unwrap_or("unknown module");
+        let level = record.level();
+        let log_line = &format!("{}", record.args());
+        unsafe {
+            abi::envoy_dynamic_module_log(
+                file.as_ptr() as _,
+                file.len(),
+                line.try_into().unwrap(),
+                mpath.as_ptr() as _,
+                mpath.len(),
+                level.into(),
+                log_line.as_ptr() as _,
+                log_line.len(),
+            );
+        }
+    }
+
+    fn flush(&self) {}
 }

@@ -359,6 +359,49 @@ void envoy_dynamic_module_http_send_response(
   }
 }
 
+envoy_dynamic_module_type_LogResult envoy_dynamic_module_log(
+    envoy_dynamic_module_type_InModuleBufferPtr file_name_str,
+    envoy_dynamic_module_type_InModuleBufferLength file_name_str_length,
+    int file_line,
+    envoy_dynamic_module_type_InModuleBufferPtr func_name_str,
+    envoy_dynamic_module_type_InModuleBufferLength func_name_str_length,
+    envoy_dynamic_module_type_LogLevel level,
+    envoy_dynamic_module_type_InModuleBufferPtr log_line_str,
+    envoy_dynamic_module_type_InModuleBufferLength log_line_str_length) {
+
+  if (log_line_str == nullptr || log_line_str_length == 0) {
+    return envoy_dynamic_module_type_LogResultInvalidMem;
+  }
+
+  spdlog::logger* local_flogger = &::Envoy::Logger::Registry::getLog(::Envoy::Logger::Id::misc);
+  spdlog::level::level_enum lvl = static_cast<spdlog::level::level_enum>(level);
+
+  // TODO. how?
+  /*
+  if (lvl > local_flogger->max_level()) {
+    return envoy_dynamic_module_type_LogResultUnknownLevel;
+  }
+  */
+
+  std::string file_name(static_cast<const char*>(file_name_str), file_name_str_length);
+  std::string func_name(static_cast<const char*>(func_name_str), func_name_str_length);
+  std::string log_line(static_cast<const char*>(log_line_str), log_line_str_length);
+
+  if (lvl > local_flogger->level()) {
+    local_flogger->log(
+      spdlog::source_loc{
+        file_name.c_str(),
+        file_line,
+        func_name.c_str()
+      },
+      lvl,
+      log_line.c_str()
+    );
+  }
+
+  return envoy_dynamic_module_type_LogResultSuccess;
+}
+
 } // extern "C"
 
 } // namespace
